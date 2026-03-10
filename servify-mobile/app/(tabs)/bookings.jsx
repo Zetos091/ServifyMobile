@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
 import { useState } from "react";
+import { router } from "expo-router";
 import { Calendar, Clock, DollarSign, RotateCcw, X, Star } from "lucide-react-native";
 import AlertModal from "../../components/AlertModal";
 import StatusBadge from "../../components/StatusBadge";
@@ -117,7 +118,10 @@ export default function Bookings() {
                   )}
 
                   {activeTab === "Completed" && (
-                    <TouchableOpacity style={styles.reviewBtn}>
+                    <TouchableOpacity
+                      style={styles.reviewBtn}
+                      onPress={() => router.push("/review")}
+                    >
                       <Star size={14} color={COLORS.accent} fill={COLORS.accent} />
                       <Text style={styles.reviewBtnText}>Leave a Review</Text>
                     </TouchableOpacity>
