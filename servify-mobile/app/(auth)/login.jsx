@@ -1,134 +1,254 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  SafeAreaView, KeyboardAvoidingView, Platform,
+  ScrollView, Alert,
+} from "react-native";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react-native";
 import { router } from "expo-router";
-import Button from "../../components/Button";
 import { COLORS, RADIUS, SHADOW } from "../../components/theme";
+import Button from "../../components/Button";
+import InputField from "../../components/InputField";
+import SocialButton from "../../components/SocialButton";
+import { login } from "../../services/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing Fields", "Please enter your email and password.");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await login(email.trim().toLowerCase(), password);
       router.replace("/(tabs)");
-    }, 1200);
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || "Login failed. Check your credentials.";
+      Alert.alert("Login Failed", msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = (provider) => {
+    Alert.alert("Coming Soon", `${provider} login will be available soon!`);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+    <SafeAreaView style={styles.root}>
 
-        {/* Logo */}
-        <View style={styles.logoSection}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoLetter}>S</Text>
-          </View>
-          <Text style={styles.brand}>Servify</Text>
-          <Text style={styles.tagline}>Your trusted service marketplace</Text>
+      {/* ── HERO TOP ── */}
+      <View style={styles.hero}>
+        <View style={styles.circle1} />
+        <View style={styles.circle2} />
+        <View style={styles.logoBox}>
+          <Text style={styles.logoLetter}>S</Text>
         </View>
+        <Text style={styles.heroTitle}>Servify</Text>
+        <Text style={styles.heroSub}>Your trusted service marketplace</Text>
+      </View>
 
-        {/* Form Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Welcome back</Text>
-          <Text style={styles.cardSubtitle}>Sign in to your account</Text>
+      {/* ── BOTTOM SHEET ── */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.sheetWrapper}
+      >
+        <ScrollView
+          contentContainerStyle={styles.sheet}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.sheetTitle}>Welcome back!</Text>
 
           {/* Email */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email Address</Text>
-            <View style={styles.inputRow}>
-              <Mail size={18} color={COLORS.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="you@example.com"
-                placeholderTextColor={COLORS.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
+          <InputField
+            icon={Mail}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
           {/* Password */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputRow}>
-              <Lock size={18} color={COLORS.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="••••••••"
-                placeholderTextColor={COLORS.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPass}
-              />
-              <TouchableOpacity onPress={() => setShowPass(!showPass)} style={styles.eyeBtn}>
-                {showPass ? <EyeOff size={18} color={COLORS.textMuted} /> : <Eye size={18} color={COLORS.textMuted} />}
-              </TouchableOpacity>
-            </View>
+          <InputField
+            icon={Lock}
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPass}
+            rightIcon={showPass ? EyeOff : Eye}
+            onRightIconPress={() => setShowPass(!showPass)}
+          />
+
+          {/* Remember me + Forgot */}
+          <View style={styles.rowBetween}>
+            <TouchableOpacity
+              style={styles.rememberRow}
+              onPress={() => setRemember(!remember)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, remember && styles.checkboxActive]}>
+                {remember && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.rememberText}>Remember me</Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.forgot}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </TouchableOpacity>
-
+          {/* Login Button — uses your Button component */}
           <Button
             onPress={handleLogin}
             loading={loading}
             icon={ArrowRight}
             iconPosition="right"
             size="lg"
-            style={{ width: "100%", marginTop: 4 }}
+            style={styles.loginBtn}
           >
-            Sign In
+            Login
           </Button>
-        </View>
 
-        <TouchableOpacity style={styles.registerLink} onPress={() => router.push("/(auth)/register")}>
-          <Text style={styles.registerLinkText}>
-            Don't have an account?{"  "}
-            <Text style={styles.registerLinkBold}>Create one</Text>
-          </Text>
-        </TouchableOpacity>
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>Or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Social Buttons — uses your SocialButton component */}
+          <SocialButton
+            provider="google"
+            onPress={() => handleSocialLogin("Google")}
+          />
+          <SocialButton
+            provider="facebook"
+            onPress={() => handleSocialLogin("Facebook")}
+          />
+
+          {/* Register link */}
+          <TouchableOpacity
+            style={styles.registerLink}
+            onPress={() => router.push("/(auth)/register")}
+          >
+            <Text style={styles.registerText}>
+              Don't have an account?{"  "}
+              <Text style={styles.registerBold}>Create an account</Text>
+            </Text>
+          </TouchableOpacity>
+
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.bg },
-  container: { flex: 1, justifyContent: "center", paddingHorizontal: 24 },
-  logoSection: { alignItems: "center", marginBottom: 32 },
+  root: { flex: 1, backgroundColor: COLORS.primary },
+
+  // Hero
+  hero: {
+    flex: 0.42,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  circle1: {
+    position: "absolute",
+    width: 280, height: 280,
+    borderRadius: 140,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    top: -80, right: -60,
+  },
+  circle2: {
+    position: "absolute",
+    width: 200, height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    bottom: -40, left: -40,
+  },
   logoBox: {
-    width: 68, height: 68, borderRadius: 22,
-    backgroundColor: COLORS.primary, justifyContent: "center", alignItems: "center",
-    marginBottom: 12, ...SHADOW.orange,
+    width: 72, height: 72,
+    borderRadius: RADIUS.xxl,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.4)",
   },
-  logoLetter: { fontSize: 32, fontWeight: "900", color: "#fff" },
-  brand: { fontSize: 28, fontWeight: "800", color: COLORS.text },
-  tagline: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4 },
-  card: { backgroundColor: "#fff", borderRadius: RADIUS.xxl, padding: 28, marginBottom: 20, ...SHADOW.md },
-  cardTitle: { fontSize: 22, fontWeight: "800", color: COLORS.text },
-  cardSubtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4, marginBottom: 24 },
-  fieldGroup: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: "600", color: COLORS.textSecondary, marginBottom: 8 },
-  inputRow: {
-    flexDirection: "row", alignItems: "center",
-    borderWidth: 1.5, borderColor: COLORS.border,
-    borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12,
-    backgroundColor: COLORS.bg,
+  logoLetter: { fontSize: 36, fontWeight: "900", color: COLORS.card },
+  heroTitle: { fontSize: 32, fontWeight: "800", color: COLORS.card, marginBottom: 6 },
+  heroSub: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
+
+  // Sheet
+  sheetWrapper: { flex: 0.58 },
+  sheet: {
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 40,
   },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15, color: COLORS.text },
-  eyeBtn: { padding: 2, marginLeft: 8 },
-  forgot: { alignSelf: "flex-end", marginBottom: 20 },
-  forgotText: { color: COLORS.primary, fontSize: 13, fontWeight: "600" },
-  registerLink: { alignItems: "center" },
-  registerLinkText: { color: COLORS.textSecondary, fontSize: 14 },
-  registerLinkBold: { color: COLORS.primary, fontWeight: "700" },
+  sheetTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: COLORS.text,
+    marginBottom: 24,
+  },
+
+  // Remember + Forgot
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 22,
+  },
+  rememberRow: { flexDirection: "row", alignItems: "center" },
+  checkbox: {
+    width: 18, height: 18,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkmark: { color: COLORS.card, fontSize: 11, fontWeight: "bold" },
+  rememberText: { fontSize: 13, color: COLORS.textSecondary },
+  forgotText: { fontSize: 13, color: COLORS.primary, fontWeight: "600" },
+
+  // Login button
+  loginBtn: { width: "100%" },
+
+  // Divider
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: {
+    marginHorizontal: 12,
+    color: COLORS.textMuted,
+    fontSize: 13,
+  },
+
+  // Register
+  registerLink: { marginTop: 8, alignItems: "center" },
+  registerText: { fontSize: 13, color: COLORS.textSecondary },
+  registerBold: { color: COLORS.primary, fontWeight: "700" },
 });
