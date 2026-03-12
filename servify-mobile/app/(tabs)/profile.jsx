@@ -10,9 +10,9 @@ const MENU_SECTIONS = [
   {
     title: "Account",
     items: [
-      { icon: User, label: "Edit Profile", desc: "Update your personal info" },
-      { icon: MapPin, label: "Saved Addresses", desc: "Manage your locations" },
-      { icon: CreditCard, label: "Payment Methods", desc: "Cards and e-wallets" },
+      { icon: User, label: "Edit Profile", desc: "Update your personal info", route: "/(tabs)/edit-profile" },
+      { icon: MapPin, label: "Saved Addresses", desc: "Manage your locations", route: "/(tabs)/saved-addresses" },
+      { icon: CreditCard, label: "Payment Methods", desc: "Cards and e-wallets", route: "/(tabs)/payment-methods" },
     ],
   },
   {
@@ -56,22 +56,21 @@ export default function Profile() {
             <Text style={styles.title}>Profile</Text>
           </View>
 
-          {/* Profile Card */}
+          {/* Profile Card — now shows live user.name and user.email */}
           <View style={styles.profileCard}>
             <View style={styles.avatarWrap}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>U</Text>
+                <Text style={styles.avatarText}>{user.name?.[0]?.toUpperCase() || "U"}</Text>
               </View>
-              <TouchableOpacity style={styles.editBtn}>
+              <TouchableOpacity style={styles.editBtn} onPress={() => router.push("/(tabs)/edit-profile")}>
                 <Edit2 size={12} color={COLORS.primary} />
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>User Name</Text>
-              <Text style={styles.userEmail}>user@email.com</Text>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
             </View>
 
-            {/* Stats */}
             <View style={styles.statsRow}>
               {[
                 { value: "12", label: "Bookings" },
@@ -86,7 +85,6 @@ export default function Profile() {
             </View>
           </View>
 
-          {/* Menu Sections */}
           {MENU_SECTIONS.map((section) => (
             <View key={section.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -101,6 +99,7 @@ export default function Profile() {
                         index < section.items.length - 1 && styles.menuItemBorder,
                       ]}
                       activeOpacity={0.7}
+                      onPress={() => handleMenuPress(item)}
                     >
                       <View style={styles.menuIconCircle}>
                         <Icon size={18} color={COLORS.primary} />
