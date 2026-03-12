@@ -12,7 +12,7 @@ const MENU_SECTIONS = [
     items: [
       { icon: User, label: "Edit Profile", desc: "Update your personal info", route: "/(tabs)/edit-profile" },
       { icon: MapPin, label: "Saved Addresses", desc: "Manage your locations", route: "/(tabs)/saved-addresses" },
-      { icon: CreditCard, label: "Payment Methods", desc: "Cards and e-wallets", route: "/(tabs)/payment-methods" },
+      { icon: CreditCard, label: "Payment Method", desc: "Cash and E-wallets", route: "/(tabs)/payment-methods" },
     ],
   },
   {
