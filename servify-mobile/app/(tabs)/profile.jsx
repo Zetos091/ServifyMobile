@@ -1,24 +1,31 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
-import { User, MapPin, CreditCard, Bell, Shield, HelpCircle, Star, LogOut, ChevronRight, Edit2 } from "lucide-react-native";
+import {
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, SafeAreaView, ActivityIndicator,
+} from "react-native";
+import {
+  User, MapPin, CreditCard, Bell, Shield,
+  HelpCircle, Star, LogOut, ChevronRight, Edit2,
+} from "lucide-react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import AlertModal from "../../components/AlertModal";
 import { COLORS, RADIUS, SHADOW } from "../../components/theme";
 import { logout } from "../../services/auth";
+import { useAuth } from "../../hooks/useAuth";
 
 const MENU_SECTIONS = [
   {
     title: "Account",
     items: [
-      { icon: User, label: "Edit Profile", desc: "Update your personal info", route: "/(tabs)/edit-profile" },
-      { icon: MapPin, label: "Saved Addresses", desc: "Manage your locations", route: "/(tabs)/saved-addresses" },
-      { icon: CreditCard, label: "Payment Methods", desc: "Cards and e-wallets", route: "/(tabs)/payment-methods" },
+      { icon: User,       label: "Edit Profile",      desc: "Update your personal info" },
+      { icon: MapPin,     label: "Saved Addresses",   desc: "Manage your locations" },
+      { icon: CreditCard, label: "Payment Methods",   desc: "Cards and e-wallets" },
     ],
   },
   {
     title: "Preferences",
     items: [
-      { icon: Bell, label: "Notifications", desc: "Manage your alerts" },
+      { icon: Bell,   label: "Notifications",     desc: "Manage your alerts" },
       { icon: Shield, label: "Privacy & Security", desc: "Password and security" },
     ],
   },
@@ -26,19 +33,20 @@ const MENU_SECTIONS = [
     title: "Support",
     items: [
       { icon: HelpCircle, label: "Help & Support", desc: "FAQs and contact us" },
-      { icon: Star, label: "Rate the App", desc: "Share your feedback" },
+      { icon: Star,       label: "Rate the App",   desc: "Share your feedback" },
     ],
   },
 ];
 
 export default function Profile() {
+  const { user, loading } = useAuth();
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await logout(); // clears token from SecureStore
+      await logout();
       router.replace("/(auth)/login");
     } catch (error) {
       router.replace("/(auth)/login");
@@ -48,34 +56,64 @@ export default function Profile() {
     }
   };
 
+  // Get first letter of name for avatar
+  const avatarLetter = user?.full_name?.[0]?.toUpperCase() || "U";
+
+  // Show loading spinner while fetching user
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
+
           <View style={styles.header}>
             <Text style={styles.title}>Profile</Text>
           </View>
 
-          {/* Profile Card — now shows live user.name and user.email */}
+          {/* Profile Card */}
           <View style={styles.profileCard}>
             <View style={styles.avatarWrap}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{user.name?.[0]?.toUpperCase() || "U"}</Text>
+                <Text style={styles.avatarText}>{avatarLetter}</Text>
               </View>
-              <TouchableOpacity style={styles.editBtn} onPress={() => router.push("/(tabs)/edit-profile")}>
+              <TouchableOpacity style={styles.editBtn}>
                 <Edit2 size={12} color={COLORS.primary} />
               </TouchableOpacity>
             </View>
+
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
+              <Text style={styles.userName}>
+                {user?.full_name || "User"}
+              </Text>
+              <Text style={styles.userEmail}>
+                {user?.email || ""}
+              </Text>
+              {/* Show user type badge */}
+              {user?.user_type && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                  </Text>
+                </View>
+              )}
             </View>
 
+            {/* Stats */}
             <View style={styles.statsRow}>
               {[
                 { value: "12", label: "Bookings" },
                 { value: "4.8", label: "Rating" },
-                { value: "3", label: "Reviews" },
+                { value: "3",  label: "Reviews" },
               ].map((s, i) => (
                 <View key={s.label} style={[styles.stat, i < 2 && styles.statBorder]}>
                   <Text style={styles.statValue}>{s.value}</Text>
@@ -85,6 +123,7 @@ export default function Profile() {
             </View>
           </View>
 
+          {/* Menu Sections */}
           {MENU_SECTIONS.map((section) => (
             <View key={section.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -99,7 +138,6 @@ export default function Profile() {
                         index < section.items.length - 1 && styles.menuItemBorder,
                       ]}
                       activeOpacity={0.7}
-                      onPress={() => handleMenuPress(item)}
                     >
                       <View style={styles.menuIconCircle}>
                         <Icon size={18} color={COLORS.primary} />
@@ -134,7 +172,6 @@ export default function Profile() {
         </View>
       </ScrollView>
 
-      {/* Logout Confirmation Modal */}
       <AlertModal
         visible={logoutModal}
         onClose={() => setLogoutModal(false)}
@@ -152,10 +189,20 @@ export default function Profile() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   container: { paddingHorizontal: 20 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
   header: { marginTop: 16, marginBottom: 16 },
   title: { fontSize: 26, fontWeight: "800", color: COLORS.text },
   profileCard: {
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.card,
     borderRadius: RADIUS.xxl,
     padding: 20,
     marginBottom: 24,
@@ -185,7 +232,18 @@ const styles = StyleSheet.create({
   },
   profileInfo: { alignItems: "center", marginBottom: 20 },
   userName: { fontSize: 20, fontWeight: "800", color: COLORS.text, marginBottom: 4 },
-  userEmail: { fontSize: 14, color: COLORS.textSecondary },
+  userEmail: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 },
+  badge: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
   statsRow: {
     flexDirection: "row",
     width: "100%",
