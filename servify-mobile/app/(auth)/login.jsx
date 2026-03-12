@@ -3,7 +3,7 @@ import {
   SafeAreaView, KeyboardAvoidingView, Platform,
   ScrollView, Alert,
 } from "react-native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { COLORS, RADIUS, SHADOW } from "../../components/theme";
@@ -12,12 +12,30 @@ import InputField from "../../components/InputField";
 import SocialButton from "../../components/SocialButton";
 import { login } from "../../services/auth";
 
+// ✅ Moved OUTSIDE component so it never re-creates on render
+const RememberCheckbox = ({ value, onToggle }) => (
+  <TouchableOpacity
+    style={styles.rememberRow}
+    onPress={onToggle}
+    activeOpacity={0.7}
+  >
+    <View style={[styles.checkbox, value && styles.checkboxActive]}>
+      {value && <Text style={styles.checkmark}>✓</Text>}
+    </View>
+    <Text style={styles.rememberText}>Remember me</Text>
+  </TouchableOpacity>
+);
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // ✅ useCallback prevents new function reference on every render
+  const toggleShowPass = useCallback(() => setShowPass((v) => !v), []);
+  const toggleRemember = useCallback(() => setRemember((v) => !v), []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -42,10 +60,12 @@ export default function Login() {
   };
 
   return (
+    // ✅ SafeAreaView no longer holds backgroundColor — prevents flash
     <SafeAreaView style={styles.root}>
 
       {/* ── HERO TOP ── */}
-      <View style={styles.hero}>
+      {/* ✅ pointerEvents="none" prevents hero from capturing touches and causing re-layout */}
+      <View style={styles.hero} pointerEvents="none">
         <View style={styles.circle1} />
         <View style={styles.circle2} />
         <View style={styles.logoBox}>
@@ -56,18 +76,22 @@ export default function Login() {
       </View>
 
       {/* ── BOTTOM SHEET ── */}
+      {/* ✅ Use "position" behavior on Android to avoid layout jumps */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "position"}
         style={styles.sheetWrapper}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -100}
       >
         <ScrollView
           contentContainerStyle={styles.sheet}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          // ✅ These two prevent scroll/layout recalculation on state change
+          bounces={false}
+          overScrollMode="never"
         >
           <Text style={styles.sheetTitle}>Welcome back!</Text>
 
-          {/* Email */}
           <InputField
             icon={Mail}
             placeholder="Enter your email"
@@ -77,7 +101,6 @@ export default function Login() {
             autoCapitalize="none"
           />
 
-          {/* Password */}
           <InputField
             icon={Lock}
             placeholder="Enter your password"
@@ -85,27 +108,17 @@ export default function Login() {
             onChangeText={setPassword}
             secureTextEntry={!showPass}
             rightIcon={showPass ? EyeOff : Eye}
-            onRightIconPress={() => setShowPass(!showPass)}
+            onRightIconPress={toggleShowPass}  // ✅ stable reference
           />
 
-          {/* Remember me + Forgot */}
           <View style={styles.rowBetween}>
-            <TouchableOpacity
-              style={styles.rememberRow}
-              onPress={() => setRemember(!remember)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.checkbox, remember && styles.checkboxActive]}>
-                {remember && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.rememberText}>Remember me</Text>
-            </TouchableOpacity>
+            {/* ✅ extracted component with stable toggle */}
+            <RememberCheckbox value={remember} onToggle={toggleRemember} />
             <TouchableOpacity>
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Login Button — uses your Button component */}
           <Button
             onPress={handleLogin}
             loading={loading}
@@ -117,24 +130,15 @@ export default function Login() {
             Login
           </Button>
 
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>Or</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social Buttons — uses your SocialButton component */}
-          <SocialButton
-            provider="google"
-            onPress={() => handleSocialLogin("Google")}
-          />
-          <SocialButton
-            provider="facebook"
-            onPress={() => handleSocialLogin("Facebook")}
-          />
+          <SocialButton provider="google" onPress={() => handleSocialLogin("Google")} />
+          <SocialButton provider="facebook" onPress={() => handleSocialLogin("Facebook")} />
 
-          {/* Register link */}
           <TouchableOpacity
             style={styles.registerLink}
             onPress={() => router.push("/(auth)/register")}
@@ -154,7 +158,6 @@ export default function Login() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.primary },
 
-  // Hero
   hero: {
     flex: 0.42,
     alignItems: "center",
@@ -189,7 +192,6 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 32, fontWeight: "800", color: COLORS.card, marginBottom: 6 },
   heroSub: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
 
-  // Sheet
   sheetWrapper: { flex: 0.58 },
   sheet: {
     backgroundColor: COLORS.card,
@@ -206,7 +208,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  // Remember + Forgot
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -231,23 +232,16 @@ const styles = StyleSheet.create({
   rememberText: { fontSize: 13, color: COLORS.textSecondary },
   forgotText: { fontSize: 13, color: COLORS.primary, fontWeight: "600" },
 
-  // Login button
   loginBtn: { width: "100%" },
 
-  // Divider
   divider: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 20,
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: {
-    marginHorizontal: 12,
-    color: COLORS.textMuted,
-    fontSize: 13,
-  },
+  dividerText: { marginHorizontal: 12, color: COLORS.textMuted, fontSize: 13 },
 
-  // Register
   registerLink: { marginTop: 8, alignItems: "center" },
   registerText: { fontSize: 13, color: COLORS.textSecondary },
   registerBold: { color: COLORS.primary, fontWeight: "700" },

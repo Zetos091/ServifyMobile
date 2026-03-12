@@ -4,9 +4,8 @@ import { useState } from "react";
 import { router } from "expo-router";
 import AlertModal from "../../components/AlertModal";
 import { COLORS, RADIUS, SHADOW } from "../../components/theme";
-import { useUser } from "../../context/UserContext";
+import { useAuth } from "../../hooks/useAuth";  // ✅ useAuth instead of useUser
 
-// ✅ Outside screen component — prevents keyboard dismiss on re-render
 const Field = ({ icon: Icon, label, field, placeholder, keyboard, value, error, onChange }) => (
   <View style={styles.fieldWrap}>
     <Text style={styles.fieldLabel}>{label}</Text>
@@ -28,12 +27,12 @@ const Field = ({ icon: Icon, label, field, placeholder, keyboard, value, error, 
 );
 
 export default function EditProfile() {
-  const { user, updateUser } = useUser();
+  const { user } = useAuth();  // ✅ use useAuth
 
   const [form, setForm] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
+    name: user?.full_name || "",   // ✅ matches your auth user shape
+    email: user?.email || "",
+    phone: user?.phone || "",
   });
   const [errors, setErrors] = useState({});
   const [successModal, setSuccessModal] = useState(false);
@@ -55,14 +54,13 @@ export default function EditProfile() {
 
   const handleSave = () => {
     if (validate()) {
-      updateUser(form);
+      // TODO: call your API to update user, e.g. await updateProfile(form)
       setSuccessModal(true);
     }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ✅ KeyboardAvoidingView pushes content up when keyboard appears */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -85,7 +83,9 @@ export default function EditProfile() {
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrap}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{form.name?.[0]?.toUpperCase() || "U"}</Text>
+                  <Text style={styles.avatarText}>
+                    {form.name?.[0]?.toUpperCase() || "U"}
+                  </Text>
                 </View>
                 <TouchableOpacity style={styles.cameraBtn}>
                   <Camera size={14} color="#fff" />
@@ -95,12 +95,24 @@ export default function EditProfile() {
             </View>
 
             <View style={styles.formCard}>
-              <Field icon={User} label="Full Name" field="name" placeholder="Enter your full name"
-                value={form.name} error={errors.name} onChange={handleChange("name")} />
-              <Field icon={Mail} label="Email Address" field="email" placeholder="Enter your email"
-                keyboard="email-address" value={form.email} error={errors.email} onChange={handleChange("email")} />
-              <Field icon={Phone} label="Phone Number" field="phone" placeholder="Enter your phone number"
-                keyboard="phone-pad" value={form.phone} error={errors.phone} onChange={handleChange("phone")} />
+              <Field
+                icon={User} label="Full Name" field="name"
+                placeholder="Enter your full name"
+                value={form.name} error={errors.name}
+                onChange={handleChange("name")}
+              />
+              <Field
+                icon={Mail} label="Email Address" field="email"
+                placeholder="Enter your email" keyboard="email-address"
+                value={form.email} error={errors.email}
+                onChange={handleChange("email")}
+              />
+              <Field
+                icon={Phone} label="Phone Number" field="phone"
+                placeholder="Enter your phone number" keyboard="phone-pad"
+                value={form.phone} error={errors.phone}
+                onChange={handleChange("phone")}
+              />
             </View>
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>

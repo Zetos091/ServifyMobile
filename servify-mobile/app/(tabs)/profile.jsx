@@ -13,27 +13,27 @@ import { COLORS, RADIUS, SHADOW } from "../../components/theme";
 import { logout } from "../../services/auth";
 import { useAuth } from "../../hooks/useAuth";
 
-const MENU_SECTIONS = [
+const MENU = [
   {
-    title: "Account",
+    section: "ACCOUNT",
     items: [
-      { icon: User,       label: "Edit Profile",      desc: "Update your personal info" },
-      { icon: MapPin,     label: "Saved Addresses",   desc: "Manage your locations" },
-      { icon: CreditCard, label: "Payment Methods",   desc: "Cards and e-wallets" },
+      { icon: User,       label: "Edit Profile",       desc: "Update your personal info",  route: "/(tabs)/edit-profile" },
+      { icon: MapPin,     label: "Saved Addresses",    desc: "Manage your locations",       route: "/(tabs)/saved-addresses" },
+      { icon: CreditCard, label: "Payment Method",     desc: "Cash",                        route: "/(tabs)/payment-methods" },
     ],
   },
   {
-    title: "Preferences",
+    section: "PREFERENCES",
     items: [
-      { icon: Bell,   label: "Notifications",     desc: "Manage your alerts" },
-      { icon: Shield, label: "Privacy & Security", desc: "Password and security" },
+      { icon: Bell,   label: "Notifications",      desc: "Manage your alerts",          route: "/(tabs)/notifications" },
+      { icon: Shield, label: "Privacy & Security", desc: "Password and security",       route: "/(tabs)/privacy-security" },
     ],
   },
   {
-    title: "Support",
+    section: "SUPPORT",
     items: [
-      { icon: HelpCircle, label: "Help & Support", desc: "FAQs and contact us" },
-      { icon: Star,       label: "Rate the App",   desc: "Share your feedback" },
+      { icon: HelpCircle, label: "Help & Support", desc: "FAQs and contact us",         route: "/(tabs)/help-support" },
+      { icon: Star,       label: "Rate the App",   desc: "Share your feedback",         route: "/(tabs)/rate-app" },
     ],
   },
 ];
@@ -56,10 +56,8 @@ export default function Profile() {
     }
   };
 
-  // Get first letter of name for avatar
   const avatarLetter = user?.full_name?.[0]?.toUpperCase() || "U";
 
-  // Show loading spinner while fetching user
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -73,7 +71,7 @@ export default function Profile() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.container}>
 
           <View style={styles.header}>
@@ -86,7 +84,10 @@ export default function Profile() {
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{avatarLetter}</Text>
               </View>
-              <TouchableOpacity style={styles.editBtn}>
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={() => router.push("/(tabs)/edit-profile")}
+              >
                 <Edit2 size={12} color={COLORS.primary} />
               </TouchableOpacity>
             </View>
@@ -98,7 +99,6 @@ export default function Profile() {
               <Text style={styles.userEmail}>
                 {user?.email || ""}
               </Text>
-              {/* Show user type badge */}
               {user?.user_type && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
@@ -124,19 +124,20 @@ export default function Profile() {
           </View>
 
           {/* Menu Sections */}
-          {MENU_SECTIONS.map((section) => (
-            <View key={section.title} style={styles.section}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+          {MENU.map((group) => (
+            <View key={group.section} style={styles.section}>
+              <Text style={styles.sectionTitle}>{group.section}</Text>
               <View style={styles.menuCard}>
-                {section.items.map((item, index) => {
+                {group.items.map((item, index) => {
                   const Icon = item.icon;
                   return (
                     <TouchableOpacity
                       key={item.label}
                       style={[
                         styles.menuItem,
-                        index < section.items.length - 1 && styles.menuItemBorder,
+                        index < group.items.length - 1 && styles.menuItemBorder,
                       ]}
+                      onPress={() => router.push(item.route)}
                       activeOpacity={0.7}
                     >
                       <View style={styles.menuIconCircle}>
@@ -168,7 +169,6 @@ export default function Profile() {
           </TouchableOpacity>
 
           <Text style={styles.version}>Servify v1.0.0</Text>
-          <View style={{ height: 32 }} />
         </View>
       </ScrollView>
 
