@@ -4,6 +4,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import AlertModal from "../../components/AlertModal";
 import { COLORS, RADIUS, SHADOW } from "../../components/theme";
+import { logout } from "../../services/auth";
 
 const MENU_SECTIONS = [
   {
@@ -32,6 +33,20 @@ const MENU_SECTIONS = [
 
 export default function Profile() {
   const [logoutModal, setLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout(); // clears token from SecureStore
+      router.replace("/(auth)/login");
+    } catch (error) {
+      router.replace("/(auth)/login");
+    } finally {
+      setLoggingOut(false);
+      setLogoutModal(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -81,7 +96,10 @@ export default function Profile() {
                   return (
                     <TouchableOpacity
                       key={item.label}
-                      style={[styles.menuItem, index < section.items.length - 1 && styles.menuItemBorder]}
+                      style={[
+                        styles.menuItem,
+                        index < section.items.length - 1 && styles.menuItemBorder,
+                      ]}
                       activeOpacity={0.7}
                     >
                       <View style={styles.menuIconCircle}>
@@ -99,10 +117,17 @@ export default function Profile() {
             </View>
           ))}
 
-          {/* Logout */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={() => setLogoutModal(true)} activeOpacity={0.8}>
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={() => setLogoutModal(true)}
+            activeOpacity={0.8}
+            disabled={loggingOut}
+          >
             <LogOut size={18} color={COLORS.error} />
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={styles.logoutText}>
+              {loggingOut ? "Logging out..." : "Log Out"}
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.version}>Servify v1.0.0</Text>
@@ -110,6 +135,7 @@ export default function Profile() {
         </View>
       </ScrollView>
 
+      {/* Logout Confirmation Modal */}
       <AlertModal
         visible={logoutModal}
         onClose={() => setLogoutModal(false)}
@@ -118,7 +144,7 @@ export default function Profile() {
         message="Are you sure you want to log out of your Servify account?"
         confirmText="Log Out"
         cancelText="Stay"
-        onConfirm={() => router.replace("/(auth)/login")}
+        onConfirm={handleLogout}
       />
     </SafeAreaView>
   );
@@ -129,29 +155,89 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 20 },
   header: { marginTop: 16, marginBottom: 16 },
   title: { fontSize: 26, fontWeight: "800", color: COLORS.text },
-  profileCard: { backgroundColor: "#fff", borderRadius: RADIUS.xxl, padding: 20, marginBottom: 24, alignItems: "center", ...SHADOW.sm },
+  profileCard: {
+    backgroundColor: "#fff",
+    borderRadius: RADIUS.xxl,
+    padding: 20,
+    marginBottom: 24,
+    alignItems: "center",
+    ...SHADOW.sm,
+  },
   avatarWrap: { position: "relative", marginBottom: 14 },
-  avatar: { width: 80, height: 80, borderRadius: RADIUS.xl, backgroundColor: "#FFF7ED", justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: "#FED7AA" },
+  avatar: {
+    width: 80, height: 80,
+    borderRadius: RADIUS.xl,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#FED7AA",
+  },
   avatarText: { fontSize: 32, fontWeight: "800", color: COLORS.primary },
-  editBtn: { position: "absolute", bottom: -4, right: -4, backgroundColor: "#fff", borderRadius: 10, width: 28, height: 28, justifyContent: "center", alignItems: "center", ...SHADOW.sm },
+  editBtn: {
+    position: "absolute",
+    bottom: -4, right: -4,
+    backgroundColor: COLORS.card,
+    borderRadius: 10,
+    width: 28, height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    ...SHADOW.sm,
+  },
   profileInfo: { alignItems: "center", marginBottom: 20 },
   userName: { fontSize: 20, fontWeight: "800", color: COLORS.text, marginBottom: 4 },
   userEmail: { fontSize: 14, color: COLORS.textSecondary },
-  statsRow: { flexDirection: "row", width: "100%", backgroundColor: COLORS.bg, borderRadius: RADIUS.lg, overflow: "hidden" },
+  statsRow: {
+    flexDirection: "row",
+    width: "100%",
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.lg,
+    overflow: "hidden",
+  },
   stat: { flex: 1, alignItems: "center", paddingVertical: 14 },
   statBorder: { borderRightWidth: 1, borderRightColor: COLORS.border },
   statValue: { fontSize: 20, fontWeight: "800", color: COLORS.primary, marginBottom: 2 },
   statLabel: { fontSize: 11, color: COLORS.textSecondary },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 13, fontWeight: "700", color: COLORS.textMuted, letterSpacing: 0.5, marginBottom: 10, textTransform: "uppercase" },
-  menuCard: { backgroundColor: "#fff", borderRadius: RADIUS.xl, overflow: "hidden", ...SHADOW.sm },
+  sectionTitle: {
+    fontSize: 13, fontWeight: "700",
+    color: COLORS.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    textTransform: "uppercase",
+  },
+  menuCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.xl,
+    overflow: "hidden",
+    ...SHADOW.sm,
+  },
   menuItem: { flexDirection: "row", alignItems: "center", padding: 16 },
   menuItemBorder: { borderBottomWidth: 1, borderBottomColor: "#FAF9F8" },
-  menuIconCircle: { width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: COLORS.primaryLight, justifyContent: "center", alignItems: "center", marginRight: 14 },
+  menuIconCircle: {
+    width: 40, height: 40,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
   menuText: { flex: 1 },
   menuLabel: { fontSize: 15, fontWeight: "600", color: COLORS.text },
   menuDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-  logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#fff", borderRadius: RADIUS.xl, paddingVertical: 16, marginBottom: 14, borderWidth: 1.5, borderColor: "#FECACA", ...SHADOW.sm },
+  logoutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.xl,
+    paddingVertical: 16,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: "#FECACA",
+    ...SHADOW.sm,
+  },
   logoutText: { color: COLORS.error, fontWeight: "700", fontSize: 15 },
   version: { textAlign: "center", color: COLORS.textMuted, fontSize: 12 },
 });

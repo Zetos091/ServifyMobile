@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   compactContent: {
     position: "absolute",
-    bottom: 12,
+    bottom: 16,
     left: 12,
     right: 12,
   },
