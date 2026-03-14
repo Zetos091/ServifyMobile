@@ -198,15 +198,18 @@ export default function ServiceDetail() {
     setBooking(true);
     try {
       await createBooking({
-        service_id:   service.id,
-        booking_date: selectedDate,
-        booking_time: selectedTime,
+        service_id:    service.id,
+        provider_id:   service.provider_id,
+        booking_date:  selectedDate,
+        booking_time:  selectedTime,
         user_location: location.trim(),
-        total_price:  resolvedPrice,
-        notes:        notes.trim() || null,
+        total_price:   resolvedPrice,
+        notes:         notes.trim() || null,
       });
       setSuccessModal(true);
     } catch (err) {
+      console.log("Booking error status:", err.response?.status);
+      console.log("Booking error data:", JSON.stringify(err.response?.data));
       setErrorMsg(err.response?.data?.message || "Booking failed. Please try again.");
       setErrorModal(true);
     } finally {
