@@ -1,12 +1,8 @@
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, ActivityIndicator,
-  RefreshControl,
+  StyleSheet, SafeAreaView, ActivityIndicator, RefreshControl,
 } from "react-native";
-import {
-  Users, Briefcase, Calendar, DollarSign,
-  TrendingUp, Bell, ChevronRight, AlertCircle,
-} from "lucide-react-native";
+import { Users, Briefcase, Calendar, DollarSign, TrendingUp, Bell, AlertCircle } from "lucide-react-native";
 import { useState, useCallback } from "react";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -15,33 +11,18 @@ import { useAuth } from "../../../hooks/useAuth";
 import { getAdminStats, getAllBookings } from "../../../services/admin";
 
 const STAT_CONFIG = [
-  { key: "total_users",    label: "Total Users",    icon: Users,     color: COLORS.info },
-  { key: "total_services", label: "Services",       icon: Briefcase, color: COLORS.primary },
-  { key: "total_bookings", label: "Bookings",       icon: Calendar,  color: COLORS.warning },
-  { key: "total_revenue",  label: "Revenue",        icon: DollarSign,color: COLORS.success },
+  { key: "total_users",    label: "Total Users", icon: Users,      color: COLORS.info },
+  { key: "total_services", label: "Services",    icon: Briefcase,  color: COLORS.primary },
+  { key: "total_bookings", label: "Bookings",    icon: Calendar,   color: COLORS.warning },
+  { key: "total_revenue",  label: "Revenue",     icon: DollarSign, color: COLORS.success },
 ];
-
-const STATUS_STYLE = {
-  pending:   { bg: "#FFF7ED", text: "#EA580C" },
-  accepted:  { bg: "#F0FDF4", text: "#16A34A" },
-  completed: { bg: "#EFF6FF", text: "#2563EB" },
-  rejected:  { bg: "#FFF1F2", text: "#E11D48" },
-  cancelled: { bg: "#F9FAFB", text: "#6B7280" },
-};
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
-    queryKey: ["adminStats"],
-    queryFn: getAdminStats,
-  });
-
-  const { data: bookings, isLoading: bookingsLoading, refetch: refetchBookings } = useQuery({
-    queryKey: ["adminBookings", "pending"],
-    queryFn: () => getAllBookings("pending"),
-  });
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({ queryKey: ["adminStats"], queryFn: getAdminStats });
+  const { data: bookings, isLoading: bookingsLoading, refetch: refetchBookings } = useQuery({ queryKey: ["adminBookings", "pending"], queryFn: () => getAllBookings("pending") });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -53,13 +34,9 @@ export default function AdminDashboard() {
     <SafeAreaView style={styles.safe}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       >
         <View style={styles.container}>
-
-          {/* Header */}
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>Admin Panel</Text>
@@ -70,25 +47,20 @@ export default function AdminDashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Stats Grid */}
           {statsLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator color={COLORS.primary} />
-            </View>
+            <View style={styles.loadingBox}><ActivityIndicator color={COLORS.primary} /></View>
           ) : (
             <View style={styles.statsGrid}>
               {STAT_CONFIG.map((stat) => {
                 const Icon = stat.icon;
                 const value = stats?.[stat.key] ?? 0;
-                const displayValue = stat.key === "total_revenue"
-                  ? `₱${Number(value).toLocaleString()}`
-                  : value;
+                const display = stat.key === "total_revenue" ? `₱${Number(value).toLocaleString()}` : value;
                 return (
                   <View key={stat.key} style={styles.statCard}>
                     <View style={[styles.statIcon, { backgroundColor: stat.color + "18" }]}>
                       <Icon size={20} color={stat.color} />
                     </View>
-                    <Text style={styles.statValue}>{displayValue}</Text>
+                    <Text style={styles.statValue}>{display}</Text>
                     <Text style={styles.statLabel}>{stat.label}</Text>
                   </View>
                 );
@@ -96,22 +68,16 @@ export default function AdminDashboard() {
             </View>
           )}
 
-          {/* Quick Actions */}
           <View style={styles.actionsRow}>
             {[
-              { label: "Users",    icon: Users,     color: COLORS.info,    route: "/(tabs)/admin/users" },
-              { label: "Services", icon: Briefcase, color: COLORS.primary, route: "/(tabs)/admin/services" },
-              { label: "Reports",  icon: TrendingUp,color: COLORS.success, route: "/(tabs)/admin/reports" },
+              { label: "Users",    icon: Users,      color: COLORS.info,    bg: COLORS.infoLight,    route: "/(tabs)/admin/users" },
+              { label: "Services", icon: Briefcase,  color: COLORS.primary, bg: COLORS.primaryLight, route: "/(tabs)/admin/services" },
+              { label: "Reports",  icon: TrendingUp, color: COLORS.success, bg: COLORS.successLight, route: "/(tabs)/admin/reports" },
             ].map((action) => {
               const Icon = action.icon;
               return (
-                <TouchableOpacity
-                  key={action.label}
-                  style={styles.actionBtn}
-                  onPress={() => router.push(action.route)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: action.color + "18" }]}>
+                <TouchableOpacity key={action.label} style={styles.actionBtn} onPress={() => router.push(action.route)} activeOpacity={0.8}>
+                  <View style={[styles.actionIcon, { backgroundColor: action.bg }]}>
                     <Icon size={20} color={action.color} />
                   </View>
                   <Text style={styles.actionLabel}>{action.label}</Text>
@@ -120,7 +86,6 @@ export default function AdminDashboard() {
             })}
           </View>
 
-          {/* Recent Pending Bookings */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Pending Bookings</Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/admin/reports")}>
@@ -137,25 +102,17 @@ export default function AdminDashboard() {
             </View>
           ) : (
             bookings.slice(0, 4).map((booking) => {
-              const statusStyle = STATUS_STYLE[booking.status] || STATUS_STYLE.pending;
+              const s = COLORS[`status${booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}`] || COLORS.statusPending;
               return (
                 <View key={booking.id} style={styles.bookingCard}>
                   <View style={styles.bookingLeft}>
-                    <Text style={styles.bookingService} numberOfLines={1}>
-                      {booking.service_title || "Service"}
-                    </Text>
-                    <Text style={styles.bookingMeta}>
-                      {booking.client_name} → {booking.provider_name}
-                    </Text>
-                    <Text style={styles.bookingDate}>
-                      {booking.booking_date} · {booking.booking_time}
-                    </Text>
+                    <Text style={styles.bookingService} numberOfLines={1}>{booking.service_title || "Service"}</Text>
+                    <Text style={styles.bookingMeta}>{booking.client_name} → {booking.provider_name}</Text>
+                    <Text style={styles.bookingDate}>{booking.booking_date} · {booking.booking_time}</Text>
                   </View>
                   <View style={styles.bookingRight}>
-                    <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
-                      <Text style={[styles.badgeText, { color: statusStyle.text }]}>
-                        {booking.status}
-                      </Text>
+                    <View style={[styles.badge, { backgroundColor: s.bg }]}>
+                      <Text style={[styles.badgeText, { color: s.text }]}>{booking.status}</Text>
                     </View>
                     <Text style={styles.bookingPrice}>₱{booking.total_price}</Text>
                   </View>
@@ -163,7 +120,6 @@ export default function AdminDashboard() {
               );
             })
           )}
-
           <View style={{ height: 32 }} />
         </View>
       </ScrollView>
@@ -174,51 +130,24 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   container: { paddingHorizontal: 20 },
-  header: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", marginTop: 16, marginBottom: 20,
-  },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, marginBottom: 20 },
   greeting: { fontSize: 13, color: COLORS.textSecondary, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   name: { fontSize: 22, fontWeight: "800", color: COLORS.text, marginTop: 2 },
-  notifBtn: {
-    width: 42, height: 42, borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card, justifyContent: "center",
-    alignItems: "center", ...SHADOW.sm,
-  },
+  notifBtn: { width: 42, height: 42, borderRadius: RADIUS.md, backgroundColor: COLORS.card, justifyContent: "center", alignItems: "center", ...SHADOW.sm },
   loadingBox: { height: 120, justifyContent: "center", alignItems: "center" },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 },
-  statCard: {
-    width: "47%", backgroundColor: COLORS.card,
-    borderRadius: RADIUS.xl, padding: 16, ...SHADOW.sm,
-  },
-  statIcon: {
-    width: 40, height: 40, borderRadius: RADIUS.md,
-    justifyContent: "center", alignItems: "center", marginBottom: 10,
-  },
+  statCard: { width: "47%", backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: 16, ...SHADOW.sm },
+  statIcon: { width: 40, height: 40, borderRadius: RADIUS.md, justifyContent: "center", alignItems: "center", marginBottom: 10 },
   statValue: { fontSize: 22, fontWeight: "800", color: COLORS.text, marginBottom: 2 },
   statLabel: { fontSize: 12, color: COLORS.textSecondary },
   actionsRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
-  actionBtn: {
-    flex: 1, backgroundColor: COLORS.card,
-    borderRadius: RADIUS.xl, padding: 14,
-    alignItems: "center", ...SHADOW.sm,
-  },
-  actionIcon: {
-    width: 44, height: 44, borderRadius: RADIUS.md,
-    justifyContent: "center", alignItems: "center", marginBottom: 8,
-  },
+  actionBtn: { flex: 1, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: 14, alignItems: "center", ...SHADOW.sm },
+  actionIcon: { width: 44, height: 44, borderRadius: RADIUS.md, justifyContent: "center", alignItems: "center", marginBottom: 8 },
   actionLabel: { fontSize: 12, fontWeight: "600", color: COLORS.text },
-  sectionHeader: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", marginBottom: 12,
-  },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   sectionTitle: { fontSize: 17, fontWeight: "800", color: COLORS.text },
   seeAll: { fontSize: 13, color: COLORS.primary, fontWeight: "600" },
-  bookingCard: {
-    backgroundColor: COLORS.card, borderRadius: RADIUS.xl,
-    padding: 16, flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", marginBottom: 10, ...SHADOW.sm,
-  },
+  bookingCard: { backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, ...SHADOW.sm },
   bookingLeft: { flex: 1, marginRight: 12 },
   bookingService: { fontSize: 14, fontWeight: "700", color: COLORS.text, marginBottom: 3 },
   bookingMeta: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 3 },
@@ -227,9 +156,6 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
   badgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
   bookingPrice: { fontSize: 14, fontWeight: "800", color: COLORS.primary },
-  emptyBox: {
-    alignItems: "center", paddingVertical: 32,
-    backgroundColor: COLORS.card, borderRadius: RADIUS.xl, ...SHADOW.sm,
-  },
+  emptyBox: { alignItems: "center", paddingVertical: 32, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, ...SHADOW.sm },
   emptyText: { fontSize: 14, fontWeight: "700", color: COLORS.text, marginTop: 10 },
 });

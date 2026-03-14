@@ -13,10 +13,7 @@ export default function AdminServices() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: services, isLoading, refetch } = useQuery({
-    queryKey: ["adminServices"],
-    queryFn: getAllServices,
-  });
+  const { data: services, isLoading, refetch } = useQuery({ queryKey: ["adminServices"], queryFn: getAllServices });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }) => toggleServiceStatus(id, is_active),
@@ -35,14 +32,10 @@ export default function AdminServices() {
   }, []);
 
   const handleDelete = (id, title) => {
-    Alert.alert(
-      "Delete Service",
-      `Are you sure you want to delete "${title}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(id) },
-      ]
-    );
+    Alert.alert("Delete Service", `Are you sure you want to delete "${title}"?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(id) },
+    ]);
   };
 
   return (
@@ -67,7 +60,6 @@ export default function AdminServices() {
           ) : (
             services.map((service) => (
               <View key={service.id} style={styles.card}>
-                {/* Top */}
                 <View style={styles.cardTop}>
                   <View style={styles.cardInfo}>
                     <Text style={styles.serviceTitle} numberOfLines={1}>{service.title}</Text>
@@ -79,19 +71,15 @@ export default function AdminServices() {
                       </View>
                       <View style={styles.ratingRow}>
                         <Star size={11} color={COLORS.warning} fill={COLORS.warning} />
-                        <Text style={styles.ratingText}>
-                          {Number(service.average_rating).toFixed(1)} ({service.review_count})
-                        </Text>
+                        <Text style={styles.ratingText}>{Number(service.average_rating).toFixed(1)} ({service.review_count})</Text>
                       </View>
                     </View>
                   </View>
                   <Text style={styles.price}>₱{service.price}</Text>
                 </View>
 
-                {/* Description */}
                 <Text style={styles.description} numberOfLines={2}>{service.description}</Text>
 
-                {/* Location */}
                 {service.location && (
                   <View style={styles.locationRow}>
                     <MapPin size={12} color={COLORS.textMuted} />
@@ -99,7 +87,6 @@ export default function AdminServices() {
                   </View>
                 )}
 
-                {/* Bottom */}
                 <View style={styles.cardBottom}>
                   <View style={styles.toggleRow}>
                     <Switch
@@ -112,10 +99,7 @@ export default function AdminServices() {
                       {service.is_active ? "Active" : "Inactive"}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.deleteBtn}
-                    onPress={() => handleDelete(service.id, service.title)}
-                  >
+                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(service.id, service.title)}>
                     <Trash2 size={15} color={COLORS.error} />
                   </TouchableOpacity>
                 </View>
@@ -149,17 +133,10 @@ const styles = StyleSheet.create({
   description: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 8, lineHeight: 18 },
   locationRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 },
   locationText: { fontSize: 12, color: COLORS.textMuted },
-  cardBottom: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", borderTopWidth: 1,
-    borderTopColor: COLORS.border, paddingTop: 12,
-  },
+  cardBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 12 },
   toggleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   toggleLabel: { fontSize: 13, fontWeight: "600" },
-  deleteBtn: {
-    width: 36, height: 36, borderRadius: RADIUS.md,
-    backgroundColor: "#FFF1F2", justifyContent: "center", alignItems: "center",
-  },
+  deleteBtn: { width: 36, height: 36, borderRadius: RADIUS.md, backgroundColor: COLORS.errorLight, justifyContent: "center", alignItems: "center" },
   emptyBox: { alignItems: "center", paddingVertical: 48, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, ...SHADOW.sm },
   emptyText: { fontSize: 15, fontWeight: "700", color: COLORS.text, marginTop: 12 },
 });
