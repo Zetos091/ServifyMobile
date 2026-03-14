@@ -9,13 +9,22 @@ import { router } from "expo-router";
 import SearchBar from "../../components/SearchBar";
 import ServiceCard from "../../components/ServiceCard";
 import AlertModal from "../../components/AlertModal";
+import FilterModal from "../../components/FilterModal";
 import { COLORS, RADIUS } from "../../components/theme";
 import { getServices, getCategories } from "../../services/services";
+
+const ratingToMin = {
+  "4.5+ Stars": 4.5,
+  "4+ Stars":   4.0,
+  "3.5+ Stars": 3.5,
+  "3 & below":  0,
+};
 
 export default function Browse() {
   const [search, setSearch]             = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [bookModal, setBookModal]       = useState(false);
+  const [filterModal, setFilterModal]   = useState(false);
   const [selectedProvider, setSelected] = useState(null);
 
   const [services, setServices]         = useState([]);
@@ -24,34 +33,70 @@ export default function Browse() {
   const [refreshing, setRefreshing]     = useState(false);
   const [error, setError]               = useState(null);
 
+  const [filters, setFilters] = useState({
+    maxPrice: 25000,
+    selectedRating: "",
+    selectedCategories: [],
+  });
+
   const isFocused = useIsFocused();
 
+  // Fetch categories once on mount
   useEffect(() => {
     getCategories()
       .then((cats) => setCategories([{ id: "all", name: "All" }, ...cats]))
       .catch((err) => console.warn("Failed to load categories:", err));
   }, []);
 
+  // Count active filters for badge on filter button
+  const activeFilterCount =
+    (filters.maxPrice < 25000 ? 1 : 0) +
+    (filters.selectedRating ? 1 : 0);
+
   const fetchServices = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const data = await getServices({ category_name: activeFilter, search });
-      const normalised = data.map((s) => ({
-        id:        s.id,
-        name:      s.title,
-        service:   s.provider_name,
-        title:     s.title,
-        rating:    parseFloat(s.average_rating).toFixed(1),
-        reviews:   parseInt(s.review_count, 10),
-        price:     `₱${parseFloat(s.price).toLocaleString()}/hr`,
-        location:  s.location ?? "N/A",
-        available: s.is_active,
-        image:     s.image_url ?? null,
-        badge:     parseInt(s.review_count, 10) >= 100  ? "Top Rated"
-               : parseInt(s.jobs_completed, 10) >= 50 ? "Popular"
-               : undefined,
-      }));
+      const params = { category_name: activeFilter, search };
+      if (filters.maxPrice < 25000) params.max_price = filters.maxPrice;
+
+      const data = await getServices(params);
+
+      // Apply client-side rating & category filters
+      const minRating = filters.selectedRating ? ratingToMin[filters.selectedRating] : null;
+
+      const normalised = data
+        .map((s) => ({
+          id:        s.id,
+          name:      s.title,
+          service:   s.provider_name,
+          title:     s.title,
+          rating:    parseFloat(s.average_rating),
+          reviews:   parseInt(s.review_count, 10),
+          price:     `₱${parseFloat(s.price).toLocaleString()}/hr`,
+          location:  s.location ?? "N/A",
+          available: s.is_active,
+          image:     s.image_url ?? null,
+          category:  s.category_name,
+          badge:     parseInt(s.review_count, 10) >= 100  ? "Top Rated"
+                   : parseInt(s.jobs_completed, 10) >= 50 ? "Popular"
+                   : undefined,
+        }))
+        .filter((s) => {
+          if (minRating !== null) {
+            if (filters.selectedRating === "3 & below") {
+              if (s.rating > 3) return false;
+            } else {
+              if (s.rating < minRating) return false;
+            }
+          }
+          if (filters.selectedCategories.length > 0) {
+            if (!filters.selectedCategories.includes(s.category)) return false;
+          }
+          return true;
+        })
+        .map((s) => ({ ...s, rating: s.rating.toFixed(1) }));
+
       setServices(normalised);
     } catch (err) {
       const msg = err.response?.data?.message || "Could not load services. Please try again.";
@@ -60,17 +105,24 @@ export default function Browse() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activeFilter, search]);
+  }, [activeFilter, search, filters]);
 
+  // Fetch services whenever screen focuses, filter, or search changes
   useEffect(() => {
     if (!isFocused) return;
+
     let cancelled = false;
     const delay = search.trim() ? 400 : 0;
+
     const timer = setTimeout(() => {
       if (!cancelled) fetchServices();
     }, delay);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [isFocused, activeFilter, search]);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isFocused, activeFilter, search, filters]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -79,6 +131,8 @@ export default function Browse() {
 
   return (
     <SafeAreaView style={styles.safe}>
+
+      {/* ── Fixed top section ── */}
       <View style={styles.top}>
         <View style={styles.header}>
           <Text style={styles.title}>
@@ -89,13 +143,21 @@ export default function Browse() {
           </Text>
         </View>
 
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search services or providers..."
-          onFilterPress={() => {}}
-        />
+        <View style={styles.searchRow}>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search services or providers..."
+            onFilterPress={() => setFilterModal(true)}
+          />
+          {activeFilterCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            </View>
+          )}
+        </View>
 
+        {/* ── Dynamic category filter chips from DB ── */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -117,12 +179,14 @@ export default function Browse() {
         </ScrollView>
       </View>
 
+      {/* ── Loading ── */}
       {loading && (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       )}
 
+      {/* ── Error ── */}
       {!loading && error && (
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
@@ -132,6 +196,7 @@ export default function Browse() {
         </View>
       )}
 
+      {/* ── Results ── */}
       {!loading && !error && (
         <FlatList
           data={services}
@@ -162,6 +227,14 @@ export default function Browse() {
         />
       )}
 
+      <FilterModal
+        visible={filterModal}
+        onClose={() => setFilterModal(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        categories={categories}
+      />
+
       <AlertModal
         visible={bookModal}
         onClose={() => setBookModal(false)}
@@ -170,7 +243,9 @@ export default function Browse() {
         message={`You're about to book ${selectedProvider?.service} service at ${selectedProvider?.price}. You can reschedule anytime.`}
         confirmText="Confirm Booking"
         cancelText="Cancel"
-        onConfirm={() => setBookModal(false)}
+        onConfirm={() => {
+          setBookModal(false);
+        }}
       />
     </SafeAreaView>
   );
@@ -178,11 +253,28 @@ export default function Browse() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
+
   top: { paddingHorizontal: 20, paddingTop: 16, backgroundColor: COLORS.bg },
   header:      { marginBottom: 16 },
   title:       { fontSize: 26, fontWeight: "800", color: COLORS.text },
   titleOrange: { color: COLORS.primary },
   subtitle:    { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+
+  searchRow: { position: "relative" },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.full,
+    width: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  filterBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+
   chipScroll: { marginBottom: 16, flexGrow: 0 },
   chipRow:    { flexDirection: "row", alignItems: "center", paddingRight: 8 },
   chip: {
@@ -199,10 +291,12 @@ const styles = StyleSheet.create({
   chipActive:     { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText:       { fontSize: 13, fontWeight: "600", color: COLORS.textSecondary },
   chipTextActive: { color: "#fff" },
+
   list:       { paddingHorizontal: 20, paddingBottom: 32 },
   empty:      { alignItems: "center", paddingTop: 80 },
   emptyTitle: { fontSize: 17, fontWeight: "700", color: COLORS.text, marginBottom: 6 },
   emptyDesc:  { fontSize: 14, color: COLORS.textSecondary },
+
   centered:  { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 60 },
   errorText: { fontSize: 15, color: "#e74c3c", marginBottom: 12, textAlign: "center" },
   retryBtn:  { paddingHorizontal: 24, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: COLORS.primary },
