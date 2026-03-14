@@ -7,17 +7,18 @@ export async function getMyBookings() {
 }
 
 // Create a new booking
-// Matches your DB: service_id, booking_date, booking_time, user_location, notes
 export async function createBooking({
   service_id,
+  provider_id,
   booking_date,
   booking_time,
   user_location,
   total_price,
   notes,
 }) {
-  const { data } = await api.post("/bookings/create", {
+  const { data } = await api.post("/bookings/createBooking", {
     service_id,
+    provider_id,
     booking_date,
     booking_time,
     user_location,
