@@ -3,6 +3,7 @@
     "name": "servify-mobile",
     "slug": "servify-mobile",
     "version": "1.0.0",
+    "scheme": "servify",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
