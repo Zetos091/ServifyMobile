@@ -1,8 +1,9 @@
 import api from "./api";
 
-// Get all bookings for the logged-in user
-export async function getMyBookings() {
-  const { data } = await api.get("/bookings");
+// Get bookings for a specific client — uses /bookings/client/:clientId
+// (GET /bookings is admin-only and will return 403 for regular users)
+export async function getClientBookings(clientId) {
+  const { data } = await api.get(`/bookings/client/${clientId}`);
   return data;
 }
 
