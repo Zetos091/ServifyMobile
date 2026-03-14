@@ -1,29 +1,12 @@
 import { Tabs } from "expo-router";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Home, Search, Calendar, User,
   Briefcase, BarChart2, Settings,
 } from "lucide-react-native";
 import { COLORS } from "../../components/theme";
 import { useAuth } from "../../hooks/useAuth";
-
-const SCREEN_OPTIONS = {
-  headerShown: false,
-  tabBarActiveTintColor: COLORS.primary,
-  tabBarInactiveTintColor: COLORS.textMuted,
-  tabBarStyle: {
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    height: 62,
-    paddingBottom: 8,
-    paddingTop: 6,
-  },
-  tabBarLabelStyle: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-};
 
 const HIDDEN = [
   "edit-profile",
@@ -37,9 +20,31 @@ const HIDDEN = [
   "service-detail",
 ];
 
+function useScreenOptions() {
+  const insets = useSafeAreaInsets();
+  return {
+    headerShown: false,
+    tabBarActiveTintColor: COLORS.primary,
+    tabBarInactiveTintColor: COLORS.textMuted,
+    tabBarStyle: {
+      backgroundColor: "#fff",
+      borderTopWidth: 1,
+      borderTopColor: "#F3F4F6",
+      height: 62 + (insets.bottom > 0 ? insets.bottom : 0),
+      paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+      paddingTop: 6,
+    },
+    tabBarLabelStyle: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
+  };
+}
+
 function ClientTabs() {
+  const screenOptions = useScreenOptions();
   return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen name="index"    options={{ title: "Home",     tabBarIcon: ({ color }) => <Home     color={color} size={22} /> }} />
       <Tabs.Screen name="browse"   options={{ title: "Browse",   tabBarIcon: ({ color }) => <Search   color={color} size={22} /> }} />
       <Tabs.Screen name="bookings" options={{ title: "Bookings", tabBarIcon: ({ color }) => <Calendar color={color} size={22} /> }} />
@@ -52,8 +57,9 @@ function ClientTabs() {
 }
 
 function ProviderTabs() {
+  const screenOptions = useScreenOptions();
   return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen name="provider" options={{ title: "Dashboard", tabBarIcon: ({ color }) => <Home      color={color} size={22} /> }} />
       <Tabs.Screen name="browse"   options={{ title: "Services",  tabBarIcon: ({ color }) => <Briefcase color={color} size={22} /> }} />
       <Tabs.Screen name="bookings" options={{ title: "Bookings",  tabBarIcon: ({ color }) => <Calendar  color={color} size={22} /> }} />
@@ -66,8 +72,9 @@ function ProviderTabs() {
 }
 
 function AdminTabs() {
+  const screenOptions = useScreenOptions();
   return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen name="admin"    options={{ title: "Dashboard", tabBarIcon: ({ color }) => <Home      color={color} size={22} /> }} />
       <Tabs.Screen name="browse"   options={{ title: "Services",  tabBarIcon: ({ color }) => <Search    color={color} size={22} /> }} />
       <Tabs.Screen name="bookings" options={{ title: "Reports",   tabBarIcon: ({ color }) => <BarChart2 color={color} size={22} /> }} />
