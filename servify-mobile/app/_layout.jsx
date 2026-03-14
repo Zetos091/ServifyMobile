@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
+import { getProfile } from "../services/auth";
+import { COLORS } from "../components/theme";
 
 const queryClient = new QueryClient();
 
-// This checks if the user is logged in and redirects accordingly
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
@@ -14,33 +15,57 @@ function AuthGate() {
 
   useEffect(() => {
     async function checkAuth() {
-      const token = await SecureStore.getItemAsync("token");
-      const inAuth = segments[0] === "(auth)";
+      try {
+        const token = await SecureStore.getItemAsync("token");
+        const inAuth = segments[0] === "(auth)";
 
-      if (!token && !inAuth) {
-        // Not logged in → send to login
+        if (!token) {
+          if (!inAuth) router.replace("/(auth)/login");
+          setChecking(false);
+          return;
+        }
+
+        const user = await getProfile();
+
+        if (inAuth) {
+          redirectByRole(router, user?.user_type);
+        }
+      } catch (err) {
+        await SecureStore.deleteItemAsync("token");
+        await SecureStore.deleteItemAsync("refreshToken");
         router.replace("/(auth)/login");
-      } else if (token && inAuth) {
-        // Already logged in → send to home
-        router.replace("/(tabs)");
+      } finally {
+        setChecking(false);
       }
-
-      setChecking(false);
     }
 
     checkAuth();
   }, [segments]);
 
-  // Show loading spinner while checking token
   if (checking) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0D1B2A" }}>
-        <ActivityIndicator size="large" color="#00B4D8" />
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return null;
+}
+
+export function redirectByRole(router, userType) {
+  switch (userType) {
+    case "provider":
+      router.replace("/(tabs)/provider");
+      break;
+    case "admin":
+      router.replace("/(tabs)/admin");
+      break;
+    case "client":
+    default:
+      router.replace("/(tabs)");
+      break;
+  }
 }
 
 export default function RootLayout() {
@@ -54,3 +79,13 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.bg,
+  },
+});
+
