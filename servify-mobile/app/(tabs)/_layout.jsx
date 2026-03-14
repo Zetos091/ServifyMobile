@@ -25,7 +25,6 @@ const SCREEN_OPTIONS = {
   },
 };
 
-// Every screen that should NOT appear in any tab bar
 const HIDDEN = [
   "edit-profile",
   "saved-addresses",
@@ -35,6 +34,7 @@ const HIDDEN = [
   "help-support",
   "rate-app",
   "review",
+  "service-detail",
 ];
 
 function ClientTabs() {
@@ -44,10 +44,8 @@ function ClientTabs() {
       <Tabs.Screen name="browse"   options={{ title: "Browse",   tabBarIcon: ({ color }) => <Search   color={color} size={22} /> }} />
       <Tabs.Screen name="bookings" options={{ title: "Bookings", tabBarIcon: ({ color }) => <Calendar color={color} size={22} /> }} />
       <Tabs.Screen name="profile"  options={{ title: "Profile",  tabBarIcon: ({ color }) => <User     color={color} size={22} /> }} />
-      {/* Hide other role sections */}
       <Tabs.Screen name="provider" options={{ href: null }} />
       <Tabs.Screen name="admin"    options={{ href: null }} />
-      {/* Hide utility screens */}
       {HIDDEN.map((name) => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>
   );
@@ -60,10 +58,8 @@ function ProviderTabs() {
       <Tabs.Screen name="browse"   options={{ title: "Services",  tabBarIcon: ({ color }) => <Briefcase color={color} size={22} /> }} />
       <Tabs.Screen name="bookings" options={{ title: "Bookings",  tabBarIcon: ({ color }) => <Calendar  color={color} size={22} /> }} />
       <Tabs.Screen name="profile"  options={{ title: "Profile",   tabBarIcon: ({ color }) => <User      color={color} size={22} /> }} />
-      {/* Hide other role sections */}
-      <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="admin" options={{ href: null }} />
-      {/* Hide utility screens */}
+      <Tabs.Screen name="index"    options={{ href: null }} />
+      <Tabs.Screen name="admin"    options={{ href: null }} />
       {HIDDEN.map((name) => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>
   );
@@ -71,20 +67,14 @@ function ProviderTabs() {
 
 function AdminTabs() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: "#F97316" }}>
-      <Tabs.Screen name="index"            options={{ title: "Home",     tabBarIcon: ({ color }) => <Home     color={color} size={22} /> }} />
-      <Tabs.Screen name="browse"           options={{ title: "Browse",   tabBarIcon: ({ color }) => <Search   color={color} size={22} /> }} />
-      <Tabs.Screen name="bookings"         options={{ title: "Bookings", tabBarIcon: ({ color }) => <Calendar color={color} size={22} /> }} />
-      <Tabs.Screen name="profile"          options={{ title: "Profile",  tabBarIcon: ({ color }) => <User     color={color} size={22} /> }} />
-      {/* Hidden from tab bar */}
-      <Tabs.Screen name="service-detail"   options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="edit-profile"     options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="saved-addresses"  options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="payment-methods"  options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="notifications"    options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="privacy-security" options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="help-support"     options={{ href: null, headerShown: false }} />
-      <Tabs.Screen name="rate-app"         options={{ href: null, headerShown: false }} />
+    <Tabs screenOptions={SCREEN_OPTIONS}>
+      <Tabs.Screen name="admin"    options={{ title: "Dashboard", tabBarIcon: ({ color }) => <Home      color={color} size={22} /> }} />
+      <Tabs.Screen name="browse"   options={{ title: "Services",  tabBarIcon: ({ color }) => <Search    color={color} size={22} /> }} />
+      <Tabs.Screen name="bookings" options={{ title: "Reports",   tabBarIcon: ({ color }) => <BarChart2 color={color} size={22} /> }} />
+      <Tabs.Screen name="profile"  options={{ title: "Settings",  tabBarIcon: ({ color }) => <Settings  color={color} size={22} /> }} />
+      <Tabs.Screen name="index"    options={{ href: null }} />
+      <Tabs.Screen name="provider" options={{ href: null }} />
+      {HIDDEN.map((name) => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>
   );
 }
